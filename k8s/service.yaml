@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  creationTimestamp: 2019-08-15T23:49:31Z
+  labels:
+    app: weather-app
+  name: weather-app-service
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: weather-app
+  sessionAffinity: None
+  type: LoadBalancer

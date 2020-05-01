@@ -1,0 +1,10 @@
+{
+    "cloudcode.profile-cluster-map": {
+        "[default]": "gke_panick-k8s-playground_us-central1-f_panick-scratch-dev",
+        "cloudbuild": "gke_panick-k8s-playground_us-central1-c_cloud-code-cluster"
+    },
+    "cloudcode.profile-registry-map": {
+        "[default]": "gcr.io/panick-k8s-playground",
+        "cloudbuild": "gcr.io/panick-k8s-playground"
+    }
+}

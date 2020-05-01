@@ -1,0 +1,48 @@
+steps:
+
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'build-image'
+  args: ['build', '--tag=gcr.io/$PROJECT_ID/weather-app:$COMMIT_SHA', '.']
+
+# Run unit tests
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'unit-test'
+  waitFor: ['build-image']
+  args: ['images', 'ls']
+
+# Push the image to container repository
+- name: 'gcr.io/cloud-builders/docker'
+  id: 'push-image'
+  waitFor: ['unit-test']
+  args: ['push', 'gcr.io/$PROJECT_ID/weather-app:$COMMIT_SHA']
+
+# Attest for this container image
+- name: 'gcr.io/$PROJECT_ID/cloudbuild-attestor'
+  id: 'attest'
+  entrypoint: 'sh'
+  waitFor: ['push-image']
+  args:
+  - -xe
+  - -c
+  - |
+     FULLY_QUALIFIED_IMAGE=$(gcloud container images describe --format 'value(image_summary.fully_qualified_digest)' gcr.io/$PROJECT_ID/weather-app:$COMMIT_SHA)
+     /scripts/create_attestation.sh -n $_VULNZ_NOTE_ID -p $PROJECT_ID -i $$FULLY_QUALIFIED_IMAGE -b $PROJECT_ID-keys -r $_KMS_KEYRING  -k $_KMS_KEY
+
+# Deploy to that k8s clusta!
+- name: 'gcr.io/cloud-builders/kubectl'
+  id: 'deploy-to-k8s'
+  waitFor: ['attest']
+  entrypoint: 'sh'
+  args:
+  - -xe
+  - -c
+  - |
+     echo "Deploying manifests to Kubernetes..."
+     REGISTRY_PATH=$(gcloud container images describe --format 'value(image_summary.fully_qualified_digest)' gcr.io/$PROJECT_ID/weather-app:$COMMIT_SHA)
+     DIGEST=$(echo $$REGISTRY_PATH | awk -F '@' '{print $2}')
+     sed -i s/weather-app+INSERT_HASH/weather-app@$$DIGEST/g k8s/*
+     #     /builder/google-cloud-sdk/bin/gcloud container clusters get-credentials $_K8S_CLUSTER --zone=$_COMPUTE_ZONE --project=$PROJECT_ID 
+     /builder/kubectl.bash apply -f k8s/ -R        # Deploy line!
+  env:
+  - 'CLOUDSDK_COMPUTE_ZONE=$_COMPUTE_ZONE'
+  - 'CLOUDSDK_CONTAINER_CLUSTER=$_K8S_CLUSTER'  

@@ -1,0 +1,42 @@
+---
+apiVersion: "apps/v1"
+kind: "Deployment"
+metadata:
+  name: "weather-app"
+  namespace: "default"
+  labels:
+    app: "weather-app"
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: "weather-app"
+  template:
+    metadata:
+      labels:
+        app: "weather-app"
+    spec:
+      containers:
+      - name: "panick-weather-app"
+        image: "gcr.io/panick-k8s-playground/weather-app+INSERT_HASH"
+---
+apiVersion: "autoscaling/v2beta1"
+kind: "HorizontalPodAutoscaler"
+metadata:
+  name: "weather-app-hpa"
+  namespace: "default"
+  labels:
+    app: "weather-app"
+spec:
+  scaleTargetRef:
+    kind: "Deployment"
+    name: "weather-app"
+    apiVersion: "apps/v1"
+  minReplicas: 1
+  maxReplicas: 5
+  metrics:
+  - type: "Resource"
+    resource:
+      name: "cpu"
+      targetAverageUtilization: 80
+
