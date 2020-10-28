@@ -1,1 +1,21 @@
 runtime: nodejs10
+
+# Add your environment variables here
+# These can be accessed from process.env.VARIABLE_NAME
+
+env_variables:
+  TEST_VAR: "foobar"
+
+# Add error handlers below, allows to reroute failures to static web pages
+handlers:
+ - file: ./public/default_error.html    
+#- error_code: over_quota
+#  file: over_quota.html
+
+# Add your service name here
+service: weather-app-service
+
+# Configures app to use Serverless VPC Access Connector for internal VPC resources
+#
+# vpc_access_connector:
+#   name: "projects/[PROJECT_ID]/locations/[REGION]/connectors/[CONNECTOR_NAME]"
